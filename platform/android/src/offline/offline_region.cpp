@@ -159,7 +159,7 @@ void OfflineRegion::updateOfflineRegionMetadata(jni::JNIEnv& env_, jni::Array<jn
 jni::Object<OfflineRegion> OfflineRegion::New(jni::JNIEnv& env, jni::Object<FileSource> jFileSource, mbgl::OfflineRegion region) {
 
     // Definition
-    auto definition = jni::Object<OfflineRegionDefinition>(*OfflineTilePyramidRegionDefinition::New(env, region.getDefinition()));
+    auto definition = jni::Object<OfflineRegionDefinition>(*OfflineRegionDefinition::New(env, region.getDefinition()));
 
     // Metadata
     auto metadata = OfflineRegion::metadata(env, region.getMetadata());

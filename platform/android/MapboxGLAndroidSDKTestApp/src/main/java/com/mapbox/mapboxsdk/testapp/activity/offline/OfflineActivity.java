@@ -20,7 +20,7 @@ import com.mapbox.mapboxsdk.offline.OfflineManager;
 import com.mapbox.mapboxsdk.offline.OfflineRegion;
 import com.mapbox.mapboxsdk.offline.OfflineRegionError;
 import com.mapbox.mapboxsdk.offline.OfflineRegionStatus;
-import com.mapbox.mapboxsdk.offline.OfflineTilePyramidRegionDefinition;
+import com.mapbox.mapboxsdk.offline.OfflineRegionDefinition;
 import com.mapbox.mapboxsdk.testapp.R;
 import com.mapbox.mapboxsdk.testapp.model.other.OfflineDownloadRegionDialog;
 import com.mapbox.mapboxsdk.testapp.model.other.OfflineListRegionsDialog;
@@ -214,7 +214,7 @@ public class OfflineActivity extends AppCompatActivity
     double minZoom = mapboxMap.getCameraPosition().zoom;
     double maxZoom = mapboxMap.getMaxZoomLevel();
     float pixelRatio = this.getResources().getDisplayMetrics().density;
-    OfflineTilePyramidRegionDefinition definition = new OfflineTilePyramidRegionDefinition(
+    OfflineRegionDefinition definition = new OfflineRegionDefinition(
       STYLE_URL, bounds, minZoom, maxZoom, pixelRatio);
 
     // Sample way of encoding metadata from a JSONObject
@@ -224,7 +224,7 @@ public class OfflineActivity extends AppCompatActivity
     offlineManager.createOfflineRegion(definition, metadata, new OfflineManager.CreateOfflineRegionCallback() {
       @Override
       public void onCreate(OfflineRegion offlineRegion) {
-        Timber.d("Offline region created: %s" , regionName);
+        Timber.d("Offline region created: %s, for geometry: %s" , regionName, offlineRegion.getDefinition().getGeometry());
         OfflineActivity.this.offlineRegion = offlineRegion;
         launchDownload();
       }

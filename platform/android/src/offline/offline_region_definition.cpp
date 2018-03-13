@@ -1,52 +1,44 @@
 #include "offline_region_definition.hpp"
 
-#include "../geometry/lat_lng_bounds.hpp"
+#include "../geojson/geometry.hpp"
 
 namespace mbgl {
 namespace android {
 
 // OfflineRegionDefinition //
 
-jni::Class<OfflineRegionDefinition> OfflineRegionDefinition::javaClass;
+jni::Object<OfflineRegionDefinition> OfflineRegionDefinition::New(jni::JNIEnv& env, mbgl::OfflineRegionDefinition definition) {
 
-void OfflineRegionDefinition::registerNative(jni::JNIEnv& env) {
-    javaClass = *jni::Class<OfflineRegionDefinition>::Find(env).NewGlobalRef(env).release();
-}
-
-// OfflineTilePyramidRegionDefinition //
-
-jni::Object<OfflineTilePyramidRegionDefinition> OfflineTilePyramidRegionDefinition::New(jni::JNIEnv& env, mbgl::OfflineTilePyramidRegionDefinition definition) {
-
-    //Convert objects
+    // Convert objects
     auto styleURL = jni::Make<jni::String>(env, definition.styleURL);
-    auto bounds = LatLngBounds::New(env, definition.bounds);
+    auto geometry = geojson::Geometry::New(env, definition.geometry);
 
-    static auto constructor = javaClass.GetConstructor<jni::String, jni::Object<LatLngBounds>, jni::jdouble, jni::jdouble, jni::jfloat>(env);
-    auto jdefinition = javaClass.New(env, constructor, styleURL, bounds, definition.minZoom, definition.maxZoom, definition.pixelRatio);
+    static auto constructor = javaClass.GetConstructor<jni::String, jni::Object<geojson::Geometry>, jni::jdouble, jni::jdouble, jni::jfloat>(env);
+    auto jdefinition = javaClass.New(env, constructor, styleURL, geometry, definition.minZoom, definition.maxZoom, definition.pixelRatio);
 
-    //Delete References
+    // Delete References
     jni::DeleteLocalRef(env, styleURL);
-    jni::DeleteLocalRef(env, bounds);
+    jni::DeleteLocalRef(env, geometry);
 
     return jdefinition;
 }
 
-mbgl::OfflineTilePyramidRegionDefinition OfflineTilePyramidRegionDefinition::getDefinition(jni::JNIEnv& env, jni::Object<OfflineTilePyramidRegionDefinition> jDefinition) {
+mbgl::OfflineRegionDefinition OfflineRegionDefinition::getDefinition(jni::JNIEnv& env, jni::Object<OfflineRegionDefinition> jDefinition) {
     // Field references
     static auto styleURLF = javaClass.GetField<jni::String>(env, "styleURL");
-    static auto boundsF = javaClass.GetField<jni::Object<LatLngBounds>>(env, "bounds");
+    static auto geometryF = javaClass.GetField<jni::Object<geojson::Geometry>>(env, "geometry");
     static auto minZoomF = javaClass.GetField<jni::jdouble>(env, "minZoom");
     static auto maxZoomF = javaClass.GetField<jni::jdouble>(env, "maxZoom");
     static auto pixelRatioF = javaClass.GetField<jni::jfloat>(env, "pixelRatio");
 
     // Get objects
     auto jStyleURL = jDefinition.Get(env, styleURLF);
-    auto jBounds = jDefinition.Get(env, boundsF);
+    auto jGeometry = jDefinition.Get(env, geometryF);
 
     // Create definition
-    mbgl::OfflineTilePyramidRegionDefinition definition(
+    mbgl::OfflineRegionDefinition definition(
         jni::Make<std::string>(env, jStyleURL),
-        LatLngBounds::getLatLngBounds(env, jBounds),
+        geojson::Geometry::convert(env, jGeometry),
         jDefinition.Get(env, minZoomF),
         jDefinition.Get(env, maxZoomF),
         jDefinition.Get(env, pixelRatioF)
@@ -54,15 +46,15 @@ mbgl::OfflineTilePyramidRegionDefinition OfflineTilePyramidRegionDefinition::get
 
     // Delete references
     jni::DeleteLocalRef(env, jStyleURL);
-    jni::DeleteLocalRef(env, jBounds);
+    jni::DeleteLocalRef(env, jGeometry);
 
     return definition;
 }
 
-jni::Class<OfflineTilePyramidRegionDefinition> OfflineTilePyramidRegionDefinition::javaClass;
+jni::Class<OfflineRegionDefinition> OfflineRegionDefinition::javaClass;
 
-void OfflineTilePyramidRegionDefinition::registerNative(jni::JNIEnv& env) {
-    javaClass = *jni::Class<OfflineTilePyramidRegionDefinition>::Find(env).NewGlobalRef(env).release();
+void OfflineRegionDefinition::registerNative(jni::JNIEnv& env) {
+    javaClass = *jni::Class<OfflineRegionDefinition>::Find(env).NewGlobalRef(env).release();
 }
 
 } // namespace android

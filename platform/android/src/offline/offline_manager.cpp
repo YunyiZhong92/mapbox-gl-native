@@ -45,9 +45,7 @@ void OfflineManager::createOfflineRegion(jni::JNIEnv& env_,
                                          jni::Array<jni::jbyte> metadata_,
                                          jni::Object<CreateOfflineRegionCallback> callback_) {
     // Convert
-
-    // XXX hardcoded cast for now as we only support OfflineTilePyramidRegionDefinition
-    auto definition = OfflineTilePyramidRegionDefinition::getDefinition(env_, jni::Object<OfflineTilePyramidRegionDefinition>(*definition_));
+    auto definition = OfflineRegionDefinition::getDefinition(env_, jni::Object<OfflineRegionDefinition>(*definition_));
 
     mbgl::OfflineRegionMetadata metadata;
     if (metadata_) {

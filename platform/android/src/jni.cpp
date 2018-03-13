@@ -182,7 +182,6 @@ void registerNatives(JavaVM *vm) {
     OfflineManager::registerNative(env);
     OfflineRegion::registerNative(env);
     OfflineRegionDefinition::registerNative(env);
-    OfflineTilePyramidRegionDefinition::registerNative(env);
     OfflineRegionError::registerNative(env);
     OfflineRegionStatus::registerNative(env);
 
