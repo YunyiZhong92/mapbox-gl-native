@@ -4309,10 +4309,12 @@ public:
             MGLAnnotationContext &annotationContext = _annotationContextsByAnnotationTag.at(annotationTag);
             annotationView = annotationContext.annotationView;
             if (annotationView && annotationView.enabled) {
-                    // Annotations represented by views use the view frame as the positioning rect.
-                    calloutPositioningRect = annotationView.frame;
-                    [annotationView.superview bringSubviewToFront:annotationView];
-                    [annotationView setSelected:YES animated:animated];
+                // Annotations represented by views use the view frame as the positioning rect.
+                calloutPositioningRect = annotationView.frame;
+                [annotationView.superview bringSubviewToFront:annotationView];
+
+                // WIP: What do we want to do here?
+                [annotationView setSelected:YES animated:animated];
             }
         }
 
@@ -4403,24 +4405,27 @@ public:
     {
         moveOffscreenAnnotation = NO;
 
+        // Need to consider the content insets.
+        CGRect bounds = UIEdgeInsetsInsetRect(self.bounds, self.contentInset);
+
         // Any one of these cases should trigger a move onscreen
-        if (CGRectGetMaxX(expandedPositioningRect) < 0.0)
+        if (CGRectGetMinX(calloutPositioningRect) < CGRectGetMinX(bounds))
         {
             constrainedRect.origin.x = expandedPositioningRect.origin.x;
             moveOffscreenAnnotation = YES;
         }
-        else if (CGRectGetMinX(expandedPositioningRect) > self.bounds.size.width)
+        else if (CGRectGetMaxX(calloutPositioningRect) > CGRectGetMaxX(bounds))
         {
             constrainedRect.origin.x = CGRectGetMaxX(expandedPositioningRect) - constrainedRect.size.width;
             moveOffscreenAnnotation = YES;
         }
 
-        if (CGRectGetMaxY(expandedPositioningRect) < 0.0)
+        if (CGRectGetMinY(calloutPositioningRect) < CGRectGetMinY(bounds))
         {
             constrainedRect.origin.y = expandedPositioningRect.origin.y;
             moveOffscreenAnnotation = YES;
         }
-        else if (expandedPositioningRect.origin.y > self.bounds.size.height)
+        else if (CGRectGetMaxY(calloutPositioningRect) > CGRectGetMaxY(bounds))
         {
             constrainedRect.origin.y = CGRectGetMaxY(expandedPositioningRect) - constrainedRect.size.height;
             moveOffscreenAnnotation = YES;
@@ -4431,7 +4436,7 @@ public:
     [calloutView presentCalloutFromRect:calloutPositioningRect
                                  inView:self.glView
                       constrainedToRect:constrainedRect
-                               animated:animated];
+                               animated:YES]; // WIP: Always animate.
 
     // notify delegate
     if ([self.delegate respondsToSelector:@selector(mapView:didSelectAnnotation:)])

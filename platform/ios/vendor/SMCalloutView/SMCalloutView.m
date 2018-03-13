@@ -249,24 +249,28 @@ NSTimeInterval const kMGLSMCalloutViewRepositionDelayForUIScrollView = 1.0/3.0;
 
 - (UIEdgeInsets)marginInsetsHintForPresentationFromRect:(CGRect)rect {
 
-    CGRect insetRect = UIEdgeInsetsInsetRect(rect, self.constrainedInsets);
-    insetRect = CGRectInset(insetRect, COMFORTABLE_MARGIN, COMFORTABLE_MARGIN);
-
     // form our subviews based on our content set so far
     [self rebuildSubviews];
 
     // size the callout to fit the width constraint as best as possible
     CGFloat height = self.calloutHeight;
-    CGSize size = [self sizeThatFits:CGSizeMake(insetRect.size.width, height)];
+    CGSize size = [self sizeThatFits:CGSizeMake(0.0f, height)];
 
     // Without re-jigging presentCalloutFromRect, let's just make a best-guess with what we have
-    // right now
-    UIEdgeInsets insets = UIEdgeInsetsZero;
+    // right now.
+    CGFloat horizontalMargin = fmaxf(0, ceilf((CALLOUT_MIN_WIDTH-rect.size.width)/2));
+
+    UIEdgeInsets insets = {
+        .top = 0.0f,
+        .right = -horizontalMargin,
+        .bottom = 0.0f,
+        .left = -horizontalMargin
+    };
 
     if (self.permittedArrowDirection == MGLSMCalloutArrowDirectionUp)
-        insets.bottom = -size.height;
+        insets.bottom -= size.height;
     else
-        insets.top = -size.height;
+        insets.top -= size.height;
 
     return insets;
 }
