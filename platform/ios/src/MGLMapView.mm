@@ -144,6 +144,9 @@ const CGFloat MGLAnnotationImagePaddingForCallout = 1;
 
 const CGSize MGLAnnotationAccessibilityElementMinimumSize = CGSizeMake(10, 10);
 
+/// Padding to edge of view that an offscreen annotation must have when being brought onscreen (by being selected)
+const UIEdgeInsets MGLMapViewOffscreenAnnotationPadding = UIEdgeInsetsMake(-20.0f, -20.0f, -20.0f, -20.0f);
+
 /// An indication that the requested annotation was not found or is nonexistent.
 enum { MGLAnnotationTagNotFound = UINT32_MAX };
 
@@ -4315,13 +4318,22 @@ public:
 
     self.selectedAnnotation = annotation;
 
+    // Determine if we need to move offscreen annotations on screen
+    // WIP: We may want to check annotation type here
+    BOOL moveOffscreenAnnotation = animated /* && <check type of annotation?> */;
+    CGRect expandedPositioningRect = UIEdgeInsetsInsetRect(calloutPositioningRect, MGLMapViewOffscreenAnnotationPadding);
+
+    // Used for callout positioning, and moving offscreen annotations onscreen.
+    CGRect constrainedRect = UIEdgeInsetsInsetRect(self.bounds, self.contentInset);
+
+    UIView <MGLCalloutView> *calloutView = nil;
+
     if ([annotation respondsToSelector:@selector(title)] &&
         annotation.title &&
         [self.delegate respondsToSelector:@selector(mapView:annotationCanShowCallout:)] &&
         [self.delegate mapView:self annotationCanShowCallout:annotation])
     {
         // build the callout
-        UIView <MGLCalloutView> *calloutView;
         if ([self.delegate respondsToSelector:@selector(mapView:calloutViewForAnnotation:)])
         {
             id providedCalloutView = [self.delegate mapView:self calloutViewForAnnotation:annotation];
@@ -4379,12 +4391,47 @@ public:
         // set annotation delegate to handle taps on the callout view
         calloutView.delegate = self;
 
-        // present popup
-        [calloutView presentCalloutFromRect:calloutPositioningRect
-                                     inView:self.glView
-                          constrainedToView:self.glView
-                                   animated:animated];
+        // If the callout view provides inset (outset) information, we can use it to expand our positioning
+        // rect, which we then use to help move the annotation on-screen if want need to.
+        if (moveOffscreenAnnotation && [calloutView respondsToSelector:@selector(marginInsetsHintForPresentationFromRect:)]) {
+            UIEdgeInsets margins = [calloutView marginInsetsHintForPresentationFromRect:calloutPositioningRect];
+            expandedPositioningRect = UIEdgeInsetsInsetRect(expandedPositioningRect, margins);
+        }
     }
+
+    if (moveOffscreenAnnotation)
+    {
+        moveOffscreenAnnotation = NO;
+
+        // Any one of these cases should trigger a move onscreen
+        if (CGRectGetMaxX(expandedPositioningRect) < 0.0)
+        {
+            constrainedRect.origin.x = expandedPositioningRect.origin.x;
+            moveOffscreenAnnotation = YES;
+        }
+        else if (CGRectGetMinX(expandedPositioningRect) > self.bounds.size.width)
+        {
+            constrainedRect.origin.x = CGRectGetMaxX(expandedPositioningRect) - constrainedRect.size.width;
+            moveOffscreenAnnotation = YES;
+        }
+
+        if (CGRectGetMaxY(expandedPositioningRect) < 0.0)
+        {
+            constrainedRect.origin.y = expandedPositioningRect.origin.y;
+            moveOffscreenAnnotation = YES;
+        }
+        else if (expandedPositioningRect.origin.y > self.bounds.size.height)
+        {
+            constrainedRect.origin.y = CGRectGetMaxY(expandedPositioningRect) - constrainedRect.size.height;
+            moveOffscreenAnnotation = YES;
+        }
+    }
+
+    // Remember, calloutView can be nil here.
+    [calloutView presentCalloutFromRect:calloutPositioningRect
+                                 inView:self.glView
+                      constrainedToRect:constrainedRect
+                               animated:animated];
 
     // notify delegate
     if ([self.delegate respondsToSelector:@selector(mapView:didSelectAnnotation:)])
@@ -4395,6 +4442,13 @@ public:
     if (annotationView && [self.delegate respondsToSelector:@selector(mapView:didSelectAnnotationView:)])
     {
         [self.delegate mapView:self didSelectAnnotationView:annotationView];
+    }
+
+    if (moveOffscreenAnnotation)
+    {
+        CGPoint center = CGPointMake(CGRectGetMidX(constrainedRect), CGRectGetMidY(constrainedRect));
+        CLLocationCoordinate2D centerCoord = [self convertPoint:center toCoordinateFromView:self];
+        [self setCenterCoordinate:centerCoord animated:YES];
     }
 }
 
@@ -4585,6 +4639,7 @@ public:
                          edgePadding:insets
                             animated:animated];
 }
+
 
 #pragma mark Annotation Image Delegate
 
