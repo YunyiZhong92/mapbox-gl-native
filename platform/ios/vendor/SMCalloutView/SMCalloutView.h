@@ -120,7 +120,6 @@ extern NSTimeInterval const kMGLSMCalloutViewRepositionDelayForUIScrollView;
 
  @param rect @c CGRect to present the view from
  @param view view to 'constrain' the @c constrainedView to
- @param constrainedView @c UIView to be constrainted in @c view
  @param constrainedRect Rect to constrain the callout to
  @param animated @c BOOL if presentation should be animated
 
